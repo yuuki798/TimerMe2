@@ -10,8 +10,6 @@ import {
   completeTask,
 } from '@/utils/api';
 import TaskList from '@/components/TaskList';
-import { Simulate } from 'react-dom/test-utils';
-import pause = Simulate.pause;
 
 interface Task {
   id: number;
@@ -40,12 +38,15 @@ export default function Home() {
     const timer = setInterval(() => {
       setTasks((prevTasks) => {
         return prevTasks.map((task) => {
-          if (task.duration + 1 >= task.total_time) {
-            return { ...task, duration: task.total_time, status: 'completed' };
-          }
+          if (task.id === id) {
+            if (task.duration + 1 >= task.total_time) {
+              clearInterval(timer);
+              return { ...task, duration: task.total_time, status: 'completed' };
+            }
 
-          if (task.id === id && task.status === 'started') {
-            return { ...task, duration: task.duration + 1 };
+            if (task.status === 'started') {
+              return { ...task, duration: task.duration + 1 };
+            }
           }
           return task;
         });
@@ -64,15 +65,25 @@ export default function Home() {
       });
     }
   };
+
   const fetchTasks = async () => {
-    const tasks = await getTasks();
-    setTasks(tasks);
+    try {
+      const fetchedTasks = await getTasks();
+      if (Array.isArray(fetchedTasks)) {
+        setTasks(fetchedTasks);
+      } else {
+        console.error('Fetched tasks are not in array format:', fetchedTasks);
+        setTasks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setTasks([]);
+    }
   };
 
   const handleCreateTask = async () => {
     let totalTimeInSeconds = newTotalTime;
 
-    // 根据选择的计时单位转换为秒
     switch (timeUnit) {
       case 'minutes':
         totalTimeInSeconds = newTotalTime * 60;
@@ -84,38 +95,65 @@ export default function Home() {
         break;
     }
 
-    const newTask = await createTask(newTaskName, totalTimeInSeconds);
-    setTasks([...tasks, newTask]);
-    setNewTaskName('');
-    setNewTotalTime(0);
-    setTimeUnit('seconds');
+    try {
+      const newTask = await createTask(newTaskName, totalTimeInSeconds);
+      setTasks([...tasks, newTask]);
+      setNewTaskName('');
+      setNewTotalTime(0);
+      setTimeUnit('seconds');
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
   };
 
-  const handleUpdateTask = async (id: number, updatedTask: any) => {
-    const task = await updateTask(id, updatedTask);
-    setTasks(tasks.map((t: any) => (t.id === id ? task : t)));
+  const handleUpdateTask = async (id: number, updatedTask: Partial<Task>) => {
+    try {
+      const task = await updateTask(id, updatedTask);
+      setTasks(tasks.map((t) => (t.id === id ? task : t)));
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
   };
+
   const handleDeleteTask = async (id: number) => {
-    await deleteTask(id);
-    setTasks(tasks.filter((t: any) => t.id !== id));
+    try {
+      await deleteTask(id);
+      setTasks(tasks.filter((t) => t.id !== id));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
+
   const handleStartTask = async (id: number) => {
-    const task = await startTask(id);
-    setTasks(tasks.map((t: any) => (t.id == id ? task : t)));
-    startTaskTimer(id);
+    try {
+      const task = await startTask(id);
+      setTasks(tasks.map((t) => (t.id === id ? task : t)));
+      startTaskTimer(id);
+    } catch (error) {
+      console.error('Error starting task:', error);
+    }
   };
 
   const handlePauseTask = async (id: number) => {
-    const task = await pauseTask(id);
-    setTasks(tasks.map((t: any) => (t.id == id ? task : t)));
-    stopTaskTimer(id);
+    try {
+      const task = await pauseTask(id);
+      setTasks(tasks.map((t) => (t.id === id ? task : t)));
+      stopTaskTimer(id);
+    } catch (error) {
+      console.error('Error pausing task:', error);
+    }
   };
 
   const handleCompleteTask = async (id: number) => {
-    const task = await completeTask(id);
-    setTasks(tasks.map((t: any) => (t.id == id ? task : t)));
-    stopTaskTimer(id);
+    try {
+      const task = await completeTask(id);
+      setTasks(tasks.map((t) => (t.id === id ? task : t)));
+      stopTaskTimer(id);
+    } catch (error) {
+      console.error('Error completing task:', error);
+    }
   };
+
   return (
     <div className={'container mx-auto p-4'}>
       <h1 className={'text-2xl font-bold mb-4'}>Welcome to TimerMe!</h1>
