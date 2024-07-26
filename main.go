@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -23,9 +24,27 @@ type Task struct {
 
 var db *gorm.DB
 
+func initConfig() {
+	viper.SetConfigName("config") // name of config file (without extension)
+	viper.SetConfigType("yaml")   // REQUIRED if the config file does not have the extension in the name
+	viper.AddConfigPath(".")      // optionally look for config in the working directory
+	err := viper.ReadInConfig()   // Find and read the config file
+	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
+}
+
 func main() {
-	dsn := "root:UiiWz5mAdmiygwAbAFem@tcp(117.72.35.68:3306)/timer_me?" +
-		"charset=utf8mb4&parseTime=True&loc=Local"
+	initConfig()
+
+	dbHost := viper.GetString("database.host")
+	dbPort := viper.GetInt("database.port")
+	dbUser := viper.GetString("database.user")
+	dbPassword := viper.GetString("database.password")
+	dbName := viper.GetString("database.name")
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		dbUser, dbPassword, dbHost, dbPort, dbName)
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
