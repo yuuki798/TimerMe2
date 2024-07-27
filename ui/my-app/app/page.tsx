@@ -34,18 +34,42 @@ export default function Home() {
     fetchTasks();
   }, []);
 
-  const startTaskTimer = (id: number) => {
+  useEffect(() => {
+    tasks.forEach((task) => {
+      if (task.status === 'started' && !taskTimers[task.id]) {
+        const startTime = new Date(task.start_time).getTime();
+        const currentTime = Date.now();
+        const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+        startTaskTimer(task.id, elapsedTime, task.duration);
+      }
+    });
+  }, [tasks]);
+
+  const startTaskTimer = (
+    id: number,
+    initialElapsedTime: number = 0,
+    initialDuration: number = 0,
+  ) => {
+    const startTime = Date.now() - initialElapsedTime * 1000;
     const timer = setInterval(() => {
       setTasks((prevTasks) => {
         return prevTasks.map((task) => {
           if (task.id === id) {
-            if (task.duration + 1 >= task.total_time) {
+            const currentTime = Date.now();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            const newDuration = initialDuration + elapsedTime;
+
+            if (newDuration >= task.total_time) {
               clearInterval(timer);
-              return { ...task, duration: task.total_time, status: 'completed' };
+              return {
+                ...task,
+                duration: task.total_time,
+                status: 'completed',
+              };
             }
 
             if (task.status === 'started') {
-              return { ...task, duration: task.duration + 1 };
+              return { ...task, duration: newDuration };
             }
           }
           return task;
@@ -99,8 +123,6 @@ export default function Home() {
       const newTask = await createTask(newTaskName, totalTimeInSeconds);
       setTasks([...tasks, newTask]);
       setNewTaskName('');
-      setNewTotalTime(0);
-      setTimeUnit('seconds');
     } catch (error) {
       console.error('Error creating task:', error);
     }
@@ -127,8 +149,13 @@ export default function Home() {
   const handleStartTask = async (id: number) => {
     try {
       const task = await startTask(id);
-      setTasks(tasks.map((t) => (t.id === id ? task : t)));
-      startTaskTimer(id);
+      const startTime = Date.now();
+      setTasks(
+        tasks.map((t) =>
+          t.id === id ? { ...task, start_time: new Date().toISOString() } : t,
+        ),
+      );
+      startTaskTimer(id, 0, task.duration); // Start with 0 elapsed time but initial duration
     } catch (error) {
       console.error('Error starting task:', error);
     }
@@ -137,8 +164,13 @@ export default function Home() {
   const handlePauseTask = async (id: number) => {
     try {
       const task = await pauseTask(id);
-      setTasks(tasks.map((t) => (t.id === id ? task : t)));
-      stopTaskTimer(id);
+      stopTaskTimer(id); // Stop the timer first
+      const currentDuration = tasks.find((t) => t.id === id)?.duration || 0;
+      setTasks(
+        tasks.map((t) =>
+          t.id === id ? { ...task, duration: currentDuration } : t,
+        ),
+      );
     } catch (error) {
       console.error('Error pausing task:', error);
     }

@@ -165,20 +165,24 @@ func pauseTask(c *gin.Context) {
 		})
 		return
 	}
-	if task.Status == "paused" {
+	if task.Status != "started" {
 		c.JSON(400, gin.H{
-			"error": "Task already paused",
+			"error": "Task is not started",
 		})
 		return
 	}
-	task.Duration = (time.Now().Second() - task.StartTime.Second()) + task.Duration
-	//task.StartTime = time.Now()
+
+	// Calculate the elapsed time in seconds
+	elapsedTime := int(time.Since(task.StartTime).Seconds())
+	task.Duration += elapsedTime
 	task.Status = "paused"
-	log.Println(task)
+
+	// Save the updated task
 	db.Save(&task)
 
 	c.JSON(200, task)
 }
+
 func completeTask(c *gin.Context) {
 	var task Task
 	err := db.Where("id=?", c.Param("id")).First(&task).Error
