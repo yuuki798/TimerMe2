@@ -138,6 +138,12 @@ func startTask(c *gin.Context) {
 		})
 		return
 	}
+	if task.Status == "started" {
+		c.JSON(400, gin.H{
+			"error": "Task already started",
+		})
+		return
+	}
 
 	// 更新任务状态和开始时间
 	task.Status = "started"
@@ -156,6 +162,12 @@ func pauseTask(c *gin.Context) {
 	if err != nil {
 		c.JSON(404, gin.H{
 			"error": "record not found",
+		})
+		return
+	}
+	if task.Status == "paused" {
+		c.JSON(400, gin.H{
+			"error": "Task already paused",
 		})
 		return
 	}
