@@ -68,6 +68,15 @@ export default function Home() {
               };
             }
 
+            if (newDuration < 0) {
+              clearInterval(timer);
+              return {
+                ...task,
+                duration: 0,
+                status: 'pending',
+              };
+            }
+
             if (task.status === 'started') {
               return { ...task, duration: newDuration };
             }
