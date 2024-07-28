@@ -1,4 +1,6 @@
 'use client';
+// Home.tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   getTasks,
@@ -8,6 +10,7 @@ import {
   startTask,
   pauseTask,
   completeTask,
+  resetTask, // 新增重置任务API调用
 } from '@/utils/api';
 import TaskList from '@/components/TaskList';
 
@@ -195,6 +198,17 @@ export default function Home() {
     }
   };
 
+  const handleResetTask = async (id: number) => {
+    // 新增重置任务处理函数
+    try {
+      const task = await resetTask(id);
+      setTasks(tasks.map((t) => (t.id === id ? task : t)));
+      stopTaskTimer(id);
+    } catch (error) {
+      console.error('Error resetting task:', error);
+    }
+  };
+
   return (
     <div className={'container mx-auto p-4'}>
       <h1 className={'text-2xl font-bold mb-4'}>Welcome to TimerMe!</h1>
@@ -236,6 +250,7 @@ export default function Home() {
           handlePauseTask={handlePauseTask}
           handleCompleteTask={handleCompleteTask}
           handleDeleteTask={handleDeleteTask}
+          handleResetTask={handleResetTask} // 传递重置任务处理函数
         />
       </div>
     </div>

@@ -1,6 +1,6 @@
+// api.ts
 import axios from 'axios';
-import exportedTypeSuite from 'sucrase/dist/types/Options-gen-types';
-// Create an axios instance
+
 const api = axios.create({
   baseURL: 'http://localhost:8080',
   headers: {
@@ -23,7 +23,6 @@ export const updateTask = async (id: number, task: any) => {
   return response.data;
 };
 
-// 思考：这里是否要返回数据？
 export const deleteTask = async (id: number) => {
   const response = await api.delete(`/tasks/${id}`);
   return response.data;
@@ -41,5 +40,11 @@ export const pauseTask = async (id: number) => {
 
 export const completeTask = async (id: number) => {
   const response = await api.put(`/tasks/${id}/complete`);
+  return response.data;
+};
+
+export const resetTask = async (id: number) => {
+  // 新增resetTask函数
+  const response = await api.put(`/tasks/${id}/reset`);
   return response.data;
 };

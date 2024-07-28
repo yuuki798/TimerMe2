@@ -1,3 +1,4 @@
+// main.go
 package main
 
 import (
@@ -11,24 +12,23 @@ import (
 	"time"
 )
 
-// Task Some columns are not needed in the JSON response
 type Task struct {
 	ID          uint      `gorm:"primary_key" json:"id"`
 	Name        string    `json:"name"`
 	Duration    int       `json:"duration"`
 	IsCompleted bool      `json:"is_completed"`
 	StartTime   time.Time `json:"start_time"`
-	Status      string    `json:"status"` // "pending", "started", "paused", "completed"
+	Status      string    `json:"status"`
 	TotalTime   int       `json:"total_time"`
 }
 
 var db *gorm.DB
 
 func initConfig() {
-	viper.SetConfigName("config") // name of config file (without extension)
-	viper.SetConfigType("yaml")   // REQUIRED if the config file does not have the extension in the name
-	viper.AddConfigPath(".")      // optionally look for config in the working directory
-	err := viper.ReadInConfig()   // Find and read the config file
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
@@ -50,14 +50,13 @@ func main() {
 	if err != nil {
 		panic("failed to connect database" + err.Error())
 	}
-	// Migrate the schema to the database automatically
 	err1 := db.AutoMigrate(&Task{})
 	if err1 != nil {
 		return
 	}
 
 	r := gin.Default()
-	r.Use(cors.Default()) // 添加这行代码以启用默认的CORS中间件
+	r.Use(cors.Default())
 
 	r.GET("/tasks", getTasks)
 	r.POST("/tasks", createTask)
@@ -66,6 +65,7 @@ func main() {
 	r.PUT("/tasks/:id/start", startTask)
 	r.PUT("/tasks/:id/pause", pauseTask)
 	r.PUT("/tasks/:id/complete", completeTask)
+	r.PUT("/tasks/:id/reset", resetTask) // 新增reset_time路由
 
 	err3 := r.Run(":8080")
 	if err3 != nil {
@@ -76,14 +76,12 @@ func main() {
 func getTasks(c *gin.Context) {
 	var tasks []Task
 	db.Find(&tasks)
-
 	c.JSON(200, tasks)
 }
+
 func createTask(c *gin.Context) {
 	var task Task
-	// json->struct
 	err := c.ShouldBindJSON(&task)
-
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		log.Printf("Error: %s", err.Error())
@@ -91,16 +89,12 @@ func createTask(c *gin.Context) {
 	}
 	log.Printf("Task: %v", task)
 	task.StartTime = time.Now()
-	// struct->db
 	db.Create(&task)
-
-	// 201 Created
 	c.JSON(201, task)
 }
 
 func updateTask(c *gin.Context) {
 	var task Task
-	// 因为id是primary key，所以只会有一条记录
 	err := db.Where("id=?", c.Param("id")).First(&task)
 	if err.Error != nil {
 		c.JSON(404, gin.H{"error": "record not found"})
@@ -123,15 +117,10 @@ func deleteTask(c *gin.Context) {
 
 func startTask(c *gin.Context) {
 	var task Task
-
-	// 获取任务ID
 	taskID := c.Param("id")
 	fmt.Printf("Task ID: %s\n", taskID)
-
-	// 查询数据库
 	err := db.Where("id = ?", taskID).First(&task).Error
 	if err != nil {
-		// 打印错误信息
 		fmt.Printf("Error finding task: %s\n", err.Error())
 		c.JSON(404, gin.H{
 			"error": "record not found",
@@ -144,15 +133,9 @@ func startTask(c *gin.Context) {
 		})
 		return
 	}
-
-	// 更新任务状态和开始时间
 	task.Status = "started"
 	task.StartTime = time.Now()
-
-	// 保存更新到数据库
 	db.Save(&task)
-
-	// 返回更新后的任务
 	c.JSON(200, task)
 }
 
@@ -171,15 +154,10 @@ func pauseTask(c *gin.Context) {
 		})
 		return
 	}
-
-	// Calculate the elapsed time in seconds
 	elapsedTime := int(time.Since(task.StartTime).Seconds())
 	task.Duration += elapsedTime
 	task.Status = "paused"
-
-	// Save the updated task
 	db.Save(&task)
-
 	c.JSON(200, task)
 }
 
@@ -193,6 +171,21 @@ func completeTask(c *gin.Context) {
 		return
 	}
 	task.Status = "completed"
+	db.Save(&task)
+	c.JSON(200, task)
+}
+
+func resetTask(c *gin.Context) { // 新增reset_task函数
+	var task Task
+	err := db.Where("id=?", c.Param("id")).First(&task).Error
+	if err != nil {
+		c.JSON(404, gin.H{
+			"error": "record not found",
+		})
+		return
+	}
+	task.Duration = 0
+	task.Status = "pending"
 	db.Save(&task)
 	c.JSON(200, task)
 }

@@ -1,3 +1,4 @@
+// TaskList.tsx
 import React from 'react';
 
 interface Task {
@@ -16,8 +17,9 @@ interface TaskListProps {
   handlePauseTask: (id: number) => void;
   handleCompleteTask: (id: number) => void;
   handleDeleteTask: (id: number) => void;
+  handleResetTask: (id: number) => void; // 新增重置任务处理函数
 }
-// Helper function to convert seconds to a more readable format with units
+
 const formatTimeWithUnit = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -32,6 +34,7 @@ const TaskList: React.FC<TaskListProps> = ({
   handlePauseTask,
   handleCompleteTask,
   handleDeleteTask,
+  handleResetTask, // 新增重置任务处理函数
 }) => {
   return (
     <ul className={'list-none p-0'}>
@@ -75,6 +78,12 @@ const TaskList: React.FC<TaskListProps> = ({
               >
                 Delete
               </button>
+              <button
+                onClick={() => handleResetTask(task.id)} // 新增重置任务按钮
+                className={'p-2 rounded bg-gray-500 text-white w-20'}
+              >
+                Reset
+              </button>
             </div>
           </li>
         );
@@ -82,4 +91,5 @@ const TaskList: React.FC<TaskListProps> = ({
     </ul>
   );
 };
+
 export default TaskList;
