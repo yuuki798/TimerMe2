@@ -46,7 +46,7 @@ export default function Home() {
         startTaskTimer(task.id, elapsedTime, task.duration);
       }
     });
-  }, [tasks]);
+  }, [taskTimers, tasks]);
 
   const startTaskTimer = (
     id: number,
@@ -105,6 +105,14 @@ export default function Home() {
   const fetchTasks = async () => {
     try {
       const fetchedTasks = await getTasks();
+      for(let i=0;i<fetchedTasks.length;i++){
+        if(fetchedTasks[i].duration==null){
+          fetchedTasks[i].duration=0;
+        }
+        if(fetchedTasks[i].is_completed==null){
+          fetchedTasks[i].is_completed=false;
+        }
+      }
       if (Array.isArray(fetchedTasks)) {
         setTasks(fetchedTasks);
       } else {
@@ -133,6 +141,12 @@ export default function Home() {
 
     try {
       const newTask = await createTask(newTaskName, totalTimeInSeconds);
+        if(newTask.duration==null){
+            newTask.duration=0;
+        }
+        if(newTask.is_completed==null) {
+          newTask.is_completed = false;
+        }
       setTasks([...tasks, newTask]);
       setNewTaskName('');
     } catch (error) {
@@ -161,6 +175,12 @@ export default function Home() {
   const handleStartTask = async (id: number) => {
     try {
       const task = await startTask(id);
+      if(task.duration==null){
+        task.duration=0;
+      }
+      if(task.is_completed==null){
+        task.is_completed=false;
+      }
       const startTime = Date.now();
       setTasks(
         tasks.map((t) =>
@@ -176,6 +196,12 @@ export default function Home() {
   const handlePauseTask = async (id: number) => {
     try {
       const task = await pauseTask(id);
+      if(task.duration==null){
+        task.duration=0;
+      }
+      if(task.is_completed==null){
+        task.is_completed=false;
+      }
       stopTaskTimer(id); // Stop the timer first
       const currentDuration = tasks.find((t) => t.id === id)?.duration || 0;
       setTasks(
@@ -202,6 +228,12 @@ export default function Home() {
     // 新增重置任务处理函数
     try {
       const task = await resetTask(id);
+      if(task.duration==null){
+        task.duration=0;
+      }
+      if(task.is_completed==null){
+        task.is_completed=false;
+      }
       setTasks(tasks.map((t) => (t.id === id ? task : t)));
       stopTaskTimer(id);
     } catch (error) {

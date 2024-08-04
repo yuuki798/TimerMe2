@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package task;
+
+option go_package = "./task";
+
+message Task {
+  uint64 id = 1;
+  string name = 2;
+  int32 duration = 3;
+  bool is_completed = 4;
+  string start_time = 5;
+  string status = 6;
+  int32 total_time = 7;
+}
+
+message TaskList {
+  repeated Task tasks = 1;
+}
+
+message TaskId {
+  uint64 id = 1;
+}
+
+message Empty {}
+
+service TaskService {
+  rpc GetTasks (Empty) returns (TaskList);
+  rpc CreateTask (Task) returns (Task);
+  rpc UpdateTask (Task) returns (Task);
+  rpc DeleteTask (TaskId) returns (Empty);
+  rpc StartTask (TaskId) returns (Task);
+  rpc PauseTask (TaskId) returns (Task);
+  rpc CompleteTask (TaskId) returns (Task);
+  rpc ResetTask (TaskId) returns (Task);
+}

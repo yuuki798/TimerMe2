@@ -1,4 +1,4 @@
-// main.go
+// SingleBodyStarter.go
 package main
 
 import (
@@ -45,11 +45,13 @@ func main() {
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		dbUser, dbPassword, dbHost, dbPort, dbName)
+
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database" + err.Error())
 	}
+
 	err1 := db.AutoMigrate(&Task{})
 	if err1 != nil {
 		return
@@ -65,7 +67,7 @@ func main() {
 	r.PUT("/tasks/:id/start", startTask)
 	r.PUT("/tasks/:id/pause", pauseTask)
 	r.PUT("/tasks/:id/complete", completeTask)
-	r.PUT("/tasks/:id/reset", resetTask) // 新增reset_time路由
+	r.PUT("/tasks/:id/reset", resetTask)
 
 	err3 := r.Run(":8080")
 	if err3 != nil {
@@ -75,12 +77,15 @@ func main() {
 
 func getTasks(c *gin.Context) {
 	var tasks []Task
+	// 返回切片
 	db.Find(&tasks)
 	c.JSON(200, tasks)
+	//fmt.Print(tasks)
 }
 
 func createTask(c *gin.Context) {
 	var task Task
+	// json->struct
 	err := c.ShouldBindJSON(&task)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -88,8 +93,10 @@ func createTask(c *gin.Context) {
 		return
 	}
 	log.Printf("Task: %v", task)
-	task.StartTime = time.Now()
+	//task.StartTime = time.Now()
+	// struct->db
 	db.Create(&task)
+	// 201 Created
 	c.JSON(201, task)
 }
 
