@@ -69,7 +69,7 @@ func main() {
 	r.PUT("/tasks/:id/complete", completeTask)
 	r.PUT("/tasks/:id/reset", resetTask)
 
-	err3 := r.Run(":8080")
+	err3 := r.Run(":12347")
 	if err3 != nil {
 		return
 	}
@@ -93,7 +93,7 @@ func createTask(c *gin.Context) {
 		return
 	}
 	log.Printf("Task: %v", task)
-	//task.StartTime = time.Now()
+	task.StartTime = time.Now()
 	// struct->db
 	db.Create(&task)
 	// 201 Created
